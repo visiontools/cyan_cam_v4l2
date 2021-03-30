@@ -88,7 +88,7 @@ void init_device(cam_v4l2_t* cam) {
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     /* Preserve original settings as set by v4l2-ctl for example */
     if (-1 == xioctl(cam->fd, VIDIOC_G_FMT, &fmt)) {
-        fprintf(stderr, "VIDIOC_S_FMT error %d, %s\\n", errno, strerror(errno));
+        fprintf(stderr, "VIDIOC_G_FMT error %d, %s\\n", errno, strerror(errno));
         exit(EXIT_FAILURE);
     }
 

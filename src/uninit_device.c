@@ -29,7 +29,15 @@ void uninit_device(cam_v4l2_t *cam)
     }
 
     free(cam->buffers);
-
+    free(cam->modes);
+    free(cam->v4l_modes);
+    
+    cam->modes = NULL ;
+    cam->matching = NULL ;
+    cam->nb_modes = 0 ;
+    cam->v4l_modes = NULL ;
+    cam->v4l_nb_modes = 0 ;
+    cam->current_mode = -1 ;
     cam->n_buffers = 0 ;
     cam->buffers = NULL ;
 }
