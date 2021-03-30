@@ -55,6 +55,9 @@ void open_device( cam_v4l2_t* cam ) ;
 void init_device(cam_v4l2_t* cam) ;
 void uninit_device(cam_v4l2_t *cam) ;
 void close_device(cam_v4l2_t *cam) ;
+void start_device(cam_v4l2_t *cam) ;
+void stop_device(cam_v4l2_t *cam) ;
+void get_frame_device(cam_v4l2_t *cam) ;
 
 
 #endif

@@ -5,7 +5,7 @@
 #include <cyan/image/image.h>
 #include <cyan/hwcam/hwcam.h>
 
-#define NB_FRAMES   500
+#define NB_FRAMES 300
 
 
 

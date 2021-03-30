@@ -123,16 +123,19 @@ int get_mode( void* cam_handle, int* mode ) {
 }
 
 int start_acqui ( void* cam_handle ) {
-
-    return ERR_NOPE ;
+    cam_v4l2_t* camera = cam_handle ;
+    start_device( camera ) ;
+    return ERR_OK ;
 }
 
 int stop_acqui ( void* cam_handle ) {
-
-    return ERR_NOPE ;
+    cam_v4l2_t* camera = cam_handle ;
+    stop_device( camera ) ;
+    return ERR_OK ;
 }
 
 int get_frame ( void* cam_handle, image_t* img ) {
-    
-    return ERR_NOPE ;
+    cam_v4l2_t* camera = cam_handle ;
+    get_frame_device( camera ) ;
+    return ERR_OK ;
 }
