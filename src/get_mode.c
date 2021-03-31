@@ -118,6 +118,7 @@ void get_supported_v4l_fps( cam_v4l2_t *cam, int format_index, int width, int he
 void get_modes( cam_v4l2_t *cam ) {
 
     int formats[100] ;
+    int colorspace[100] ;
     int width[100] ;
     int height[100] ;
     int fps_numerator[100] ;
@@ -167,6 +168,7 @@ void get_modes( cam_v4l2_t *cam ) {
     cam->modes    = (hw_mode_t*) malloc( cam->v4l_nb_modes * sizeof( hw_mode_t ) ) ;
     cam->matching = (int*) malloc( cam->v4l_nb_modes * sizeof( int ) ) ;
     for ( i=0; i<cam->v4l_nb_modes; i++ ) {
+
         switch ( cam->v4l_modes[i].v4l_format ) {
             case V4L2_PIX_FMT_YUYV:
                 cam->modes[cam->nb_modes].pixel_format = YUV422_8 ;

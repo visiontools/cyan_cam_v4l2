@@ -106,8 +106,10 @@ void get_frame_device(cam_v4l2_t *cam) {
 
             r = select(cam->fd + 1, &fds, NULL, NULL, &tv);
             if (-1 == r) {
-                if (EINTR == errno)
-                    return; // continue ?
+                if (EINTR == errno) {
+                    fprintf(stderr,"Signal caught\n") ;
+                    return ;
+                }
                 fprintf(stderr, "select\n");
                 exit(EXIT_FAILURE);
             }
@@ -117,8 +119,7 @@ void get_frame_device(cam_v4l2_t *cam) {
                 exit(EXIT_FAILURE);
             }
 
-            if (read_frame(cam)) {
-                return;
-            }
+            read_frame(cam) ;
+              
 }
 
