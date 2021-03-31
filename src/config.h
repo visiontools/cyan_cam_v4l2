@@ -1,0 +1,7 @@
+#ifndef CAMV4L2_CONFIG_H
+#define CAMV4L2_CONFIG_H
+
+#define CAMV4L2_VERSION_MAJOR 0
+#define CAMV4L2_VERSION_MINOR 1
+
+#endif

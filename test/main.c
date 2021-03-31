@@ -20,7 +20,10 @@ int main (int argc, char** argv) {
     struct timeval start ;
     struct timeval stop ;
 
-    camera = hwcam_new( "../libcam_v4l2.so", "/dev/video0" ) ;
+    if ( argc == 1 )
+        camera = hwcam_new( "../libcam_v4l2.so", "/dev/video0" ) ;
+    else
+        camera = hwcam_new( "../libcam_v4l2.so", argv[1] ) ;
     
     hwcam_start_stream( camera ) ;
     

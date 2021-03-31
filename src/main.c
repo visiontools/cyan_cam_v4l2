@@ -33,9 +33,7 @@ int init( void** cam_handle, va_list args ){
     camera->buffers = NULL ;
     camera->n_buffers = 0 ;
     camera->v4l_modes = NULL ;
-    camera->v4l_nb_modes = 0 ;
     camera->modes = NULL ;
-    camera->matching = NULL ;
     camera->nb_modes = 0 ;
     camera->current_mode = -1 ;
 
@@ -84,13 +82,13 @@ int set_mode( void* cam_handle, int mode )  {
     // Set Image mode
 
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.width       = camera->v4l_modes[camera->matching[mode]].v4l_width ;
-    fmt.fmt.pix.height      = camera->v4l_modes[camera->matching[mode]].v4l_height ;
-    fmt.fmt.pix.pixelformat = camera->v4l_modes[camera->matching[mode]].v4l_format ;
+    fmt.fmt.pix.width       = camera->v4l_modes[mode].v4l_width ;
+    fmt.fmt.pix.height      = camera->v4l_modes[mode].v4l_height ;
+    fmt.fmt.pix.pixelformat = camera->v4l_modes[mode].v4l_format ;
     fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
 
     xioctl(camera->fd, VIDIOC_S_FMT, &fmt);
-    if (fmt.fmt.pix.pixelformat != camera->v4l_modes[camera->matching[mode]].v4l_format) {
+    if (fmt.fmt.pix.pixelformat != camera->v4l_modes[mode].v4l_format) {
         printf("Libv4l didn't accept format.\n");
         return ERR_NOPE;
     }
@@ -98,8 +96,8 @@ int set_mode( void* cam_handle, int mode )  {
     // Set FPS
 
     parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    parm.parm.capture.timeperframe.numerator = camera->v4l_modes[camera->matching[mode]].v4l_fps_numerator ;
-    parm.parm.capture.timeperframe.denominator = camera->v4l_modes[camera->matching[mode]].v4l_fps_denominator ;
+    parm.parm.capture.timeperframe.numerator   = camera->v4l_modes[mode].v4l_fps_numerator ;
+    parm.parm.capture.timeperframe.denominator = camera->v4l_modes[mode].v4l_fps_denominator ;
 
     if (xioctl(camera->fd, VIDIOC_S_PARM, &parm) < 0 ) {
         printf("Libv4l didn't accept framerate.\n");
