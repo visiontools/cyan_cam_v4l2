@@ -22,10 +22,9 @@ void convert_v4l_mode_to_cyan( v4lmode_t* v4lmode, hw_mode_t* cyanmode) {
             cyanmode->enabled = 1 ;
             break ;
         default:
-            cyanmode->pixel_format =  Unsupported; 
+            cyanmode->pixel_format = Unsupported; 
             cyanmode->image_format = FMT_UNSUPPORTED ; 
             cyanmode->enabled = 0 ;
-            break ;
             break ;
     }
 }
