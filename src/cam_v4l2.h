@@ -22,6 +22,7 @@ typedef struct {
     int v4l_height ;
     int v4l_fps_numerator ;
     int v4l_fps_denominator ;
+    char description[100] ;
 } v4lmode_t ;
 
 typedef struct {

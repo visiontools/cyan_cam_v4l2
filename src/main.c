@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-
 #include <linux/videodev2.h>
+
 #include "cam_v4l2.h"
+
+#define VERBOSE
 
 void get_modes( cam_v4l2_t *cam ) ;
 
@@ -15,10 +17,13 @@ int init( void** cam_handle, va_list args ){
 
     char* filename ;
     cam_v4l2_t* camera ;
+    int i ;
     
     filename = va_arg(args, char*) ;
 
+#ifdef VERBOSE
     printf("filename: %s \n", filename ) ;
+#endif
 
     camera = (cam_v4l2_t*) malloc( sizeof(cam_v4l2_t ) ) ;
     *cam_handle = (void*) camera ;
@@ -43,6 +48,24 @@ int init( void** cam_handle, va_list args ){
     open_device( camera ) ;     
     init_device( camera ) ;
     get_modes( camera ) ;
+
+#ifdef VERBOSE
+    printf( "Found %d acquisition modes \n", camera->nb_modes ) ;
+    for (i=0; i<camera->nb_modes; i++ ) {
+        printf("[%3d] %s\n", i, camera->modes[i].description ); 
+    }
+#endif
+
+    for (i=0; i<camera->nb_modes; i++ ) {
+        if ( camera->modes[i].enabled == 1 ) {
+            if (set_mode(camera,i) == ERR_OK )
+                break ;
+        }
+    }
+
+#ifdef VERBOSE
+    printf( "Current Mode is %d \n", camera->current_mode ) ;
+#endif
 
     return ERR_OK ;
 }

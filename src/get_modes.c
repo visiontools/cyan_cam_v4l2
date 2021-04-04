@@ -82,8 +82,6 @@ void get_modes( cam_v4l2_t *cam ) {
         }
         fmtdesc.index++ ;
     }
-    
-    printf( "Found %d acquisition modes \n", cam->nb_modes ) ;
 
     // Array allocation
 
@@ -125,6 +123,7 @@ void get_modes( cam_v4l2_t *cam ) {
                             while ( 0 == xioctl( cam->fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmivalenum ) ) {
                                 // --- Fill arrays
                                    cam->v4l_modes[index].v4l_format = fmtdesc.pixelformat ;
+                                   snprintf(cam->v4l_modes[index].description, 100, "%s", fmtdesc.description ) ;
                                    cam->v4l_modes[index].v4l_width  = frmsizeenum.discrete.width ;
                                    cam->v4l_modes[index].v4l_height = frmsizeenum.discrete.height ;
                                    cam->v4l_modes[index].v4l_fps_numerator    = frmivalenum.discrete.numerator ;

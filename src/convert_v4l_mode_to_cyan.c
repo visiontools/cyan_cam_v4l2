@@ -13,17 +13,17 @@ void convert_v4l_mode_to_cyan( v4lmode_t* v4lmode, hw_mode_t* cyanmode) {
     cyanmode->rows = v4lmode->v4l_height ;
     cyanmode->fps  = ((float) v4lmode->v4l_fps_denominator) / ((float)v4lmode->v4l_fps_numerator) ;
     cyanmode->enabled = 0 ;
-    snprintf(cyanmode->description, 100, "YUV422 %dx%d @ @f FPS", cyanmode->cols, cyanmode->rows, cyanmode->fps ) ;
+    snprintf(cyanmode->description, 100, "%s %dx%d @ %f FPS", v4lmode->description, cyanmode->cols, cyanmode->rows, cyanmode->fps ) ;   // FIXME
 
-    switch (v4lmode->v4l_format) {
+    switch (v4lmode->v4l_format) {                          // Add new formats here
         case V4L2_PIX_FMT_YUYV :
             cyanmode->pixel_format = YUV422_8_UYVY ; 
             cyanmode->image_format = FMT_PLANE ; 
             cyanmode->enabled = 1 ;
             break ;
         default:
-            cyanmode->pixel_format =  ; 
-            cyanmode->image_format = FMT_PLANE ; 
+            cyanmode->pixel_format =  Unsupported; 
+            cyanmode->image_format = FMT_UNSUPPORTED ; 
             cyanmode->enabled = 0 ;
             break ;
             break ;
