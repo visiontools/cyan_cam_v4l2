@@ -93,7 +93,7 @@ int get_available_modes( void* cam_handle, hw_mode_t** modes, int* nb_modes ) {
 }
 
 int get_serial( void* cam_handle, char** serial, size_t* serial_size )  {
-
+    // TODO
     return ERR_NOPE ;
 }
 
@@ -127,6 +127,10 @@ int set_mode( void* cam_handle, int mode )  {
         return ERR_NOPE;
     }
 
+    // Set pixel_decode function
+
+    // TODO
+
     // Set current_mode
 
     camera->current_mode = mode ;
@@ -158,5 +162,6 @@ int stop_acqui ( void* cam_handle ) {
 int get_frame ( void* cam_handle, image_t* img ) {
     cam_v4l2_t* camera = cam_handle ;
     get_frame_device( camera ) ;
+    // TODO
     return ERR_OK ;
 }
