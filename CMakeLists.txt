@@ -4,7 +4,7 @@
 ###
 ###############################################################################
 
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.9)
 
 project (camv4l2)
 set (camv4l2_VERSION_MAJOR 0)
