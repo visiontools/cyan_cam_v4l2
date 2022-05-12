@@ -1,9 +1,10 @@
 #ifndef CAM_V4L2_H
 #define CAM_V4L2_H
 
-#include <stdlib.h>
 #include <cyan/hwcam/plugin.h>
 #include <cyan/common/error.h>
+
+#define VERBOSE
 
 enum io_method {
     IO_METHOD_READ,

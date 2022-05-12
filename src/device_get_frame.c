@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <linux/videodev2.h>
 
 #include "cam_v4l2.h"
