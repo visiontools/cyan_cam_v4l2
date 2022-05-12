@@ -5,22 +5,25 @@
 
 #include "cam_v4l2.h"
 
-void
-device_stop(cam_v4l2_t * cam)
+int
+stop_acqui(void *cam_handle)
 {
+	cam_v4l2_t *camera = cam_handle;
+
 	enum v4l2_buf_type type;
 
-	switch (cam->io) {
+	switch (camera->io) {
 	case IO_METHOD_READ:
 		/* Nothing to do. */
 		break;
 	case IO_METHOD_MMAP:
 	case IO_METHOD_USERPTR:
 		type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		if (-1 == xioctl(cam->fd, VIDIOC_STREAMOFF, &type)) {
+		if (-1 == xioctl(camera->fd, VIDIOC_STREAMOFF, &type)) {
 			fprintf(stderr, "VIDIOC_STREAMOFF\n");
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		}
 		break;
 	}
+	return ERR_OK;
 }

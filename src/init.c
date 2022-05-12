@@ -86,18 +86,18 @@ init(void **cam_handle, va_list args)
 		if (EINVAL == errno) {
 			fprintf(stderr, "%s is no V4L2 device\\n",
 			    camera->dev_name);
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		} else {
 			fprintf(stderr, "VIDIOC_QUERYCAP error %d, %s\\n",
 			    errno, strerror(errno));
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		}
 	}
 
 	if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
 		fprintf(stderr, "%s is no video capture device\\n",
 		    camera->dev_name);
-		exit(EXIT_FAILURE);
+		return ERR_NOPE;
 	}
 
 	switch (camera->io) {
@@ -105,7 +105,7 @@ init(void **cam_handle, va_list args)
 		if (!(cap.capabilities & V4L2_CAP_READWRITE)) {
 			fprintf(stderr, "%s does not support read i/o\\n",
 			    camera->dev_name);
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		}
 		break;
 
@@ -114,7 +114,7 @@ init(void **cam_handle, va_list args)
 		if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
 			fprintf(stderr, "%s does not support streaming i/o\\n",
 			    camera->dev_name);
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		}
 		break;
 	}
@@ -150,7 +150,7 @@ init(void **cam_handle, va_list args)
 	if (-1 == xioctl(camera->fd, VIDIOC_G_FMT, &fmt)) {
 		fprintf(stderr, "VIDIOC_G_FMT error %d, %s\\n", errno,
 		    strerror(errno));
-		exit(EXIT_FAILURE);
+		return ERR_NOPE;
 	}
 
 	/* Buggy driver paranoia. */
@@ -224,25 +224,25 @@ init_mmap(cam_v4l2_t * cam)
 		if (EINVAL == errno) {
 			fprintf(stderr, "%s does not support "
 			    "memory mappingn", cam->dev_name);
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		} else {
 			fprintf(stderr, "VIDIOC_REQBUFS error %d, %s\\n",
 			    errno, strerror(errno));
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		}
 	}
 
 	if (req.count < 2) {
 		fprintf(stderr, "Insufficient buffer memory on %s\\n",
 		    cam->dev_name);
-		exit(EXIT_FAILURE);
+		return ERR_NOPE;
 	}
 
 	cam->buffers = calloc(req.count, sizeof(*(cam->buffers)));
 
 	if (!cam->buffers) {
 		fprintf(stderr, "Out of memory\\n");
-		exit(EXIT_FAILURE);
+		return ERR_NOPE;
 	}
 
 	for (cam->n_buffers = 0; cam->n_buffers < req.count;
@@ -258,7 +258,7 @@ init_mmap(cam_v4l2_t * cam)
 		if (-1 == xioctl(cam->fd, VIDIOC_QUERYBUF, &buf)) {
 			fprintf(stderr, "VIDIOC_QUERYBUF error %d, %s\\n",
 			    errno, strerror(errno));
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		}
 
 		cam->buffers[cam->n_buffers].length = buf.length;
@@ -271,7 +271,7 @@ init_mmap(cam_v4l2_t * cam)
 		if (MAP_FAILED == cam->buffers[cam->n_buffers].start) {
 			fprintf(stderr, "mmap error %d, %s\\n", errno,
 			    strerror(errno));
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		}
 	}
 }
@@ -291,11 +291,11 @@ init_userp(cam_v4l2_t * cam, unsigned int buffer_size)
 		if (EINVAL == errno) {
 			fprintf(stderr, "%s does not support "
 			    "user pointer i/on", cam->dev_name);
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		} else {
 			fprintf(stderr, "VIDIOC_REQBUFS error %d, %s\\n",
 			    errno, strerror(errno));
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		}
 	}
 
@@ -303,7 +303,7 @@ init_userp(cam_v4l2_t * cam, unsigned int buffer_size)
 
 	if (!cam->buffers) {
 		fprintf(stderr, "Out of memory\\n");
-		exit(EXIT_FAILURE);
+		return ERR_NOPE;
 	}
 
 	for (cam->n_buffers = 0; cam->n_buffers < 4; ++(cam->n_buffers)) {
@@ -312,7 +312,7 @@ init_userp(cam_v4l2_t * cam, unsigned int buffer_size)
 
 		if (!cam->buffers[cam->n_buffers].start) {
 			fprintf(stderr, "Out of memory\\n");
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		}
 	}
 }
@@ -325,7 +325,7 @@ init_read(cam_v4l2_t * cam, unsigned int buffer_size)
 
 	if (!cam->buffers) {
 		fprintf(stderr, "Out of memory\\n");
-		exit(EXIT_FAILURE);
+		return ERR_NOPE;
 	}
 
 	cam->buffers[0].length = buffer_size;
@@ -333,7 +333,7 @@ init_read(cam_v4l2_t * cam, unsigned int buffer_size)
 
 	if (!cam->buffers[0].start) {
 		fprintf(stderr, "Out of memory\\n");
-		exit(EXIT_FAILURE);
+		return ERR_NOPE;
 	}
 }
 

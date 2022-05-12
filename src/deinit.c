@@ -28,7 +28,7 @@ deinit(void *cam_handle)
 				camera->buffers[i].length)) {
 				fprintf(stderr, "munmap error %d, %s\\n",
 				    errno, strerror(errno));
-				exit(EXIT_FAILURE);
+				return ERR_NOPE;
 			}
 		break;
 
@@ -56,7 +56,7 @@ deinit(void *cam_handle)
 	if (-1 == close(camera->fd)) {
 		fprintf(stderr, "close error %d, %s\\n", errno,
 		    strerror(errno));
-		exit(EXIT_FAILURE);
+		return ERR_NOPE;
 	}
 	camera->fd = -1;
 

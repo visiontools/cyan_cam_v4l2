@@ -66,7 +66,7 @@ device_get_available_modes(cam_v4l2_t * cam)
 		if (0 != xioctl(cam->fd, VIDIOC_ENUM_FRAMESIZES, &frmsizeenum)) {
 			fprintf(stderr, "[frmsizeenum error %d, %s\\n", errno,
 			    strerror(errno));
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		}
 		switch (frmsizeenum.type) {
 		case V4L2_FRMSIZE_TYPE_DISCRETE:
@@ -87,7 +87,7 @@ device_get_available_modes(cam_v4l2_t * cam)
 					fprintf(stderr,
 					    "frmivalenum error %d, %s\\n",
 					    errno, strerror(errno));
-					exit(EXIT_FAILURE);
+					return ERR_NOPE;
 				}
 				switch (frmivalenum.type) {
 				case V4L2_FRMIVAL_TYPE_DISCRETE:
@@ -144,7 +144,7 @@ device_get_available_modes(cam_v4l2_t * cam)
 		if (0 != xioctl(cam->fd, VIDIOC_ENUM_FRAMESIZES, &frmsizeenum)) {
 			fprintf(stderr, "[frmsizeenum error %d, %s\\n", errno,
 			    strerror(errno));
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		}
 		switch (frmsizeenum.type) {
 		case V4L2_FRMSIZE_TYPE_DISCRETE:
@@ -165,7 +165,7 @@ device_get_available_modes(cam_v4l2_t * cam)
 					fprintf(stderr,
 					    "frmivalenum error %d, %s\\n",
 					    errno, strerror(errno));
-					exit(EXIT_FAILURE);
+					return ERR_NOPE;
 				}
 				switch (frmivalenum.type) {
 				case V4L2_FRMIVAL_TYPE_DISCRETE:

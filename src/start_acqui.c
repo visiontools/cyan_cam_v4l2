@@ -5,20 +5,22 @@
 
 #include "cam_v4l2.h"
 
-void
-device_start(cam_v4l2_t * cam)
+int
+start_acqui(void *cam_handle)
 {
+	cam_v4l2_t *camera = cam_handle;
 
 	unsigned int i;
 	enum v4l2_buf_type type;
 
-	switch (cam->io) {
+	switch (camera->io) {
+
 	case IO_METHOD_READ:
 		/* Nothing to do. */
 		break;
 
 	case IO_METHOD_MMAP:
-		for (i = 0; i < cam->n_buffers; ++i) {
+		for (i = 0; i < camera->n_buffers; ++i) {
 			struct v4l2_buffer buf;
 
 			memset(&buf, 0, sizeof(buf));
@@ -26,39 +28,41 @@ device_start(cam_v4l2_t * cam)
 			buf.memory = V4L2_MEMORY_MMAP;
 			buf.index = i;
 
-			if (-1 == xioctl(cam->fd, VIDIOC_QBUF, &buf)) {
+			if (-1 == xioctl(camera->fd, VIDIOC_QBUF, &buf)) {
 				fprintf(stderr, "VIDIOC_QBUF\n");
-				exit(EXIT_FAILURE);
+                return ERR_NOPE;
 			}
 		}
 		type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		if (-1 == xioctl(cam->fd, VIDIOC_STREAMON, &type)) {
+		if (-1 == xioctl(camera->fd, VIDIOC_STREAMON, &type)) {
 			fprintf(stderr, "VIDIOC_STREAMON\n");
-			exit(EXIT_FAILURE);
+            return ERR_NOPE ;
 		}
 		break;
 
 	case IO_METHOD_USERPTR:
-		for (i = 0; i < cam->n_buffers; ++i) {
+		for (i = 0; i < camera->n_buffers; ++i) {
 			struct v4l2_buffer buf;
 
 			memset(&buf, 0, sizeof(buf));
 			buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 			buf.memory = V4L2_MEMORY_USERPTR;
 			buf.index = i;
-			buf.m.userptr = (unsigned long) cam->buffers[i].start;
-			buf.length = cam->buffers[i].length;
+			buf.m.userptr = (unsigned long) camera->buffers[i].start;
+			buf.length = camera->buffers[i].length;
 
-			if (-1 == xioctl(cam->fd, VIDIOC_QBUF, &buf)) {
+			if (-1 == xioctl(camera->fd, VIDIOC_QBUF, &buf)) {
 				fprintf(stderr, "VIDIOC_QBUF\n");
-				exit(EXIT_FAILURE);
+                return ERR_NOPE;
 			}
 		}
 		type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		if (-1 == xioctl(cam->fd, VIDIOC_STREAMON, &type)) {
+		if (-1 == xioctl(camera->fd, VIDIOC_STREAMON, &type)) {
 			fprintf(stderr, "VIDIOC_STREAMON\n");
-			exit(EXIT_FAILURE);
+			return ERR_NOPE;
 		}
 		break;
 	}
+
+	return ERR_OK;
 }
