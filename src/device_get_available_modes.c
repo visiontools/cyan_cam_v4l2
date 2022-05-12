@@ -174,27 +174,33 @@ device_get_available_modes(cam_v4l2_t * cam)
 						VIDIOC_ENUM_FRAMEINTERVALS,
 						&frmivalenum)) {
 						// --- Fill arrays
-						cam->v4l_modes[index].
-						    v4l_format =
-						    fmtdesc.pixelformat;
-						snprintf(cam->v4l_modes[index].
-						    description, 100, "%s",
-						    fmtdesc.description);
-						cam->v4l_modes[index].
-						    v4l_width =
+						cam->
+						    v4l_modes[index].v4l_format
+						    = fmtdesc.pixelformat;
+						snprintf(cam->
+						    v4l_modes
+						    [index].description, 100,
+						    "%s", fmtdesc.description);
+						cam->
+						    v4l_modes[index].v4l_width
+						    =
 						    frmsizeenum.discrete.width;
-						cam->v4l_modes[index].
-						    v4l_height =
-						    frmsizeenum.discrete.
-						    height;
-						cam->v4l_modes[index].
-						    v4l_fps_numerator =
-						    frmivalenum.discrete.
-						    numerator;
-						cam->v4l_modes[index].
-						    v4l_fps_denominator =
-						    frmivalenum.discrete.
-						    denominator;
+						cam->
+						    v4l_modes[index].v4l_height
+						    =
+						    frmsizeenum.
+						    discrete.height;
+						cam->
+						    v4l_modes
+						    [index].v4l_fps_numerator =
+						    frmivalenum.
+						    discrete.numerator;
+						cam->
+						    v4l_modes
+						    [index].v4l_fps_denominator
+						    =
+						    frmivalenum.
+						    discrete.denominator;
 						convert_v4l_mode_to_cyan(&
 						    (cam->v4l_modes[index]),
 						    &(cam->modes[index]));

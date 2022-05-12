@@ -45,8 +45,8 @@ init(void **cam_handle, va_list args)
 	printf("Found %d acquisition modes \n", camera->nb_modes);
 	for (i = 0; i < camera->nb_modes; i++) {
 		printf("[%3d]%c %s\n", i,
-                (camera->modes[i].enabled)?'+':'-',
-                camera->modes[i].description);
+		    (camera->modes[i].enabled) ? '+' : '-',
+		    camera->modes[i].description);
 	}
 #endif
 
@@ -57,15 +57,14 @@ init(void **cam_handle, va_list args)
 		}
 	}
 
-    if ( camera->current_mode == -1 ) {
-        fprintf(stderr, "[cam_v4l2] Could not find any compatible mode. Exiting. \n");
-        return ERR_NOPE ;
-    }
-
+	if (camera->current_mode == -1) {
+		fprintf(stderr,
+		    "[cam_v4l2] Could not find any compatible mode. Exiting. \n");
+		return ERR_NOPE;
+	}
 #ifdef VERBOSE
 	printf("Current Mode is %d \n", camera->current_mode);
 #endif
 
 	return ERR_OK;
 }
-

@@ -7,4 +7,3 @@ start_acqui(void *cam_handle)
 	device_start(camera);
 	return ERR_OK;
 }
-

@@ -10,4 +10,3 @@ deinit(void *cam_handle)
 	free(cam_handle);
 	return ERR_OK;
 }
-

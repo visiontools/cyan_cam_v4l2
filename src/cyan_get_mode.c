@@ -10,4 +10,3 @@ get_mode(void *cam_handle, int *mode)
 	*mode = camera->current_mode;
 	return ERR_OK;
 }
-
