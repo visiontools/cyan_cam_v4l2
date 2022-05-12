@@ -8,7 +8,7 @@
 
 #include "cam_v4l2.h"
 
-void open_device( cam_v4l2_t* cam ) {
+void device_open( cam_v4l2_t* cam ) {
 
     struct stat st;
 

@@ -91,7 +91,7 @@ static int read_frame(cam_v4l2_t *cam)
     return 1;
 }
 
-void get_frame_device(cam_v4l2_t *cam) {
+void device_get_frame(cam_v4l2_t *cam) {
 
             fd_set fds;
             struct timeval tv;

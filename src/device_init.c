@@ -12,7 +12,7 @@ void init_read( cam_v4l2_t* cam, unsigned int buffer_size) ;
 void init_userp(cam_v4l2_t *cam, unsigned int buffer_size) ;
 void init_mmap(cam_v4l2_t* cam) ;
 
-void init_device(cam_v4l2_t* cam) {
+void device_init(cam_v4l2_t* cam) {
 
     struct v4l2_capability cap;
     struct v4l2_cropcap cropcap;

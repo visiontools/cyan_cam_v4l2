@@ -4,7 +4,7 @@
 
 #include "cam_v4l2.h"
 
-void stop_device(cam_v4l2_t *cam) {
+void device_stop(cam_v4l2_t *cam) {
     enum v4l2_buf_type type;
 
     switch (cam->io) {

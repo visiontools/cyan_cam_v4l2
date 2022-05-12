@@ -5,7 +5,7 @@
 #include "cam_v4l2.h"
 
 
-void uninit_device(cam_v4l2_t *cam)
+void device_uninit(cam_v4l2_t *cam)
 {
     unsigned int i;
 

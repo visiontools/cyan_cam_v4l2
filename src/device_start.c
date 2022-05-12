@@ -3,7 +3,7 @@
 
 #include "cam_v4l2.h"
 
-void start_device(cam_v4l2_t *cam) {
+void device_start(cam_v4l2_t *cam) {
 
     unsigned int i;
     enum v4l2_buf_type type;
