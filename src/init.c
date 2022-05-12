@@ -1,18 +1,23 @@
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <linux/videodev2.h>
+#include <cyan/hwcam/pixelformats.h>
+#include <cyan/hwcam/imageformats.h>
+
 #include "cam_v4l2.h"
 
-void init_read(cam_v4l2_t * cam, unsigned int buffer_size);
-void init_userp(cam_v4l2_t * cam, unsigned int buffer_size);
-void init_mmap(cam_v4l2_t * cam);
+
+
+int init_read(cam_v4l2_t * cam, unsigned int buffer_size);
+int init_userp(cam_v4l2_t * cam, unsigned int buffer_size);
+int init_mmap(cam_v4l2_t * cam);
+void convert_v4l_mode_to_cyan(v4lmode_t *, hw_mode_t *);
 
 int
 init(void **cam_handle, va_list args)
@@ -28,7 +33,7 @@ init(void **cam_handle, va_list args)
 	printf("filename: %s \n", filename);
 #endif
 
-    // Structure Allocation and init.
+    //--- Structure Allocation and init.
     
 	camera = (cam_v4l2_t *) malloc(sizeof(cam_v4l2_t));
 	*cam_handle = (void *) camera;
@@ -50,7 +55,7 @@ init(void **cam_handle, va_list args)
 	camera->dev_name = malloc(255);
 	strncpy(camera->dev_name, filename, 255);
 
-    // Device opening
+    //--- Device opening
     
 	struct stat st;
 
@@ -73,7 +78,7 @@ init(void **cam_handle, va_list args)
 		return ERR_NOPE;
 	}
 
-    // Device Initialization
+    //--- Device Initialization
 
 	struct v4l2_capability cap;
 	struct v4l2_cropcap cropcap;
@@ -175,9 +180,197 @@ init(void **cam_handle, va_list args)
 		break;
 	}
 
-    // List availables modes
+    //--- List availables modes
     
-	device_get_available_modes(camera);
+	struct v4l2_fmtdesc fmtdesc;
+	struct v4l2_frmsizeenum frmsizeenum;
+	struct v4l2_frmivalenum frmivalenum;
+	int index;
+
+	camera->nb_modes = 0;
+
+	// Iterate through all format / resolution / framerate and count them
+
+	memset(&fmtdesc, 0, sizeof(fmtdesc));
+	fmtdesc.index = 0;
+	fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	while (0 == xioctl(camera->fd, VIDIOC_ENUM_FMT, &fmtdesc)) {
+		memset(&frmsizeenum, 0, sizeof(frmsizeenum));
+		frmsizeenum.index = 0;
+		frmsizeenum.pixel_format = fmtdesc.pixelformat;
+		if (0 != xioctl(camera->fd, VIDIOC_ENUM_FRAMESIZES, &frmsizeenum)) {
+			fprintf(stderr, "[frmsizeenum error %d, %s\\n", errno,
+			    strerror(errno));
+			return ERR_NOPE;
+		}
+		switch (frmsizeenum.type) {
+		case V4L2_FRMSIZE_TYPE_DISCRETE:
+			memset(&frmsizeenum, 0, sizeof(frmsizeenum));
+			frmsizeenum.index = 0;
+			frmsizeenum.pixel_format = fmtdesc.pixelformat;
+			while (0 == xioctl(camera->fd, VIDIOC_ENUM_FRAMESIZES,
+				&frmsizeenum)) {
+				memset(&frmivalenum, 0, sizeof(frmivalenum));
+				frmivalenum.index = 0;
+				frmivalenum.pixel_format = fmtdesc.pixelformat;
+				frmivalenum.width = frmsizeenum.discrete.width;
+				frmivalenum.height =
+				    frmsizeenum.discrete.height;
+				if (0 != xioctl(camera->fd,
+					VIDIOC_ENUM_FRAMEINTERVALS,
+					&frmivalenum)) {
+					fprintf(stderr,
+					    "frmivalenum error %d, %s\\n",
+					    errno, strerror(errno));
+					return ERR_NOPE;
+				}
+				switch (frmivalenum.type) {
+				case V4L2_FRMIVAL_TYPE_DISCRETE:
+					frmivalenum.index = 0;
+					while (0 == xioctl(camera->fd,
+						VIDIOC_ENUM_FRAMEINTERVALS,
+						&frmivalenum)) {
+						camera->nb_modes++;	// Count it !!!!
+						frmivalenum.index++;
+					}
+					break;
+				case V4L2_FRMIVAL_TYPE_STEPWISE:
+					printf("Stepwise size values \n");
+					break;
+				case V4L2_FRMIVAL_TYPE_CONTINUOUS:
+					printf("Continuous size values \n");
+					break;
+				default:
+					printf("This should never happen \n");
+					break;
+				}
+				frmsizeenum.index++;
+			}
+			break;
+		case V4L2_FRMSIZE_TYPE_STEPWISE:
+			printf("Stepwise size values \n");
+			break;
+		case V4L2_FRMSIZE_TYPE_CONTINUOUS:
+			printf("Continuous size values \n");
+			break;
+		default:
+			printf("This should never happen \n");
+			break;
+		}
+		fmtdesc.index++;
+	}
+
+	// Array allocation
+
+	camera->modes = (hw_mode_t *) malloc(camera->nb_modes * sizeof(hw_mode_t));
+	camera->v4l_modes =
+	    (v4lmode_t *) malloc(camera->nb_modes * sizeof(v4lmode_t));
+
+	// Array filling
+
+	index = 0;
+	memset(&fmtdesc, 0, sizeof(fmtdesc));
+	fmtdesc.index = 0;
+	fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	while (0 == xioctl(camera->fd, VIDIOC_ENUM_FMT, &fmtdesc)) {
+		memset(&frmsizeenum, 0, sizeof(frmsizeenum));
+		frmsizeenum.index = 0;
+		frmsizeenum.pixel_format = fmtdesc.pixelformat;
+		if (0 != xioctl(camera->fd, VIDIOC_ENUM_FRAMESIZES, &frmsizeenum)) {
+			fprintf(stderr, "[frmsizeenum error %d, %s\\n", errno,
+			    strerror(errno));
+			return ERR_NOPE;
+		}
+		switch (frmsizeenum.type) {
+		case V4L2_FRMSIZE_TYPE_DISCRETE:
+			memset(&frmsizeenum, 0, sizeof(frmsizeenum));
+			frmsizeenum.index = 0;
+			frmsizeenum.pixel_format = fmtdesc.pixelformat;
+			while (0 == xioctl(camera->fd, VIDIOC_ENUM_FRAMESIZES,
+				&frmsizeenum)) {
+				memset(&frmivalenum, 0, sizeof(frmivalenum));
+				frmivalenum.index = 0;
+				frmivalenum.pixel_format = fmtdesc.pixelformat;
+				frmivalenum.width = frmsizeenum.discrete.width;
+				frmivalenum.height =
+				    frmsizeenum.discrete.height;
+				if (0 != xioctl(camera->fd,
+					VIDIOC_ENUM_FRAMEINTERVALS,
+					&frmivalenum)) {
+					fprintf(stderr,
+					    "frmivalenum error %d, %s\\n",
+					    errno, strerror(errno));
+					return ERR_NOPE;
+				}
+				switch (frmivalenum.type) {
+				case V4L2_FRMIVAL_TYPE_DISCRETE:
+					frmivalenum.index = 0;
+					while (0 == xioctl(camera->fd,
+						VIDIOC_ENUM_FRAMEINTERVALS,
+						&frmivalenum)) {
+						// --- Fill arrays
+						camera->
+						    v4l_modes[index].v4l_format
+						    = fmtdesc.pixelformat;
+						snprintf(camera->
+						    v4l_modes
+						    [index].description, 100,
+						    "%s", fmtdesc.description);
+						camera->
+						    v4l_modes[index].v4l_width
+						    =
+						    frmsizeenum.discrete.width;
+						camera->
+						    v4l_modes[index].v4l_height
+						    =
+						    frmsizeenum.
+						    discrete.height;
+						camera->
+						    v4l_modes
+						    [index].v4l_fps_numerator =
+						    frmivalenum.
+						    discrete.numerator;
+						camera->
+						    v4l_modes
+						    [index].v4l_fps_denominator
+						    =
+						    frmivalenum.
+						    discrete.denominator;
+						convert_v4l_mode_to_cyan(&
+						    (camera->v4l_modes[index]),
+						    &(camera->modes[index]));
+						index++;
+						// ---
+						frmivalenum.index++;
+					}
+					break;
+				case V4L2_FRMIVAL_TYPE_STEPWISE:
+					printf("Stepwise size values \n");
+					break;
+				case V4L2_FRMIVAL_TYPE_CONTINUOUS:
+					printf("Continuous size values \n");
+					break;
+				default:
+					printf("This should never happen \n");
+					break;
+				}
+				frmsizeenum.index++;
+			}
+			break;
+		case V4L2_FRMSIZE_TYPE_STEPWISE:
+			printf("Stepwise size values \n");
+			break;
+		case V4L2_FRMSIZE_TYPE_CONTINUOUS:
+			printf("Continuous size values \n");
+			break;
+		default:
+			printf("This should never happen \n");
+			break;
+		}
+		fmtdesc.index++;
+	}
+
+    //--- Affichage
 
 #ifdef VERBOSE
 	printf("Found %d acquisition modes \n", camera->nb_modes);
@@ -209,7 +402,7 @@ init(void **cam_handle, va_list args)
 
 
 
-void
+int
 init_mmap(cam_v4l2_t * cam)
 {
 	struct v4l2_requestbuffers req;
@@ -274,9 +467,10 @@ init_mmap(cam_v4l2_t * cam)
 			return ERR_NOPE;
 		}
 	}
+    return ERR_OK ;
 }
 
-void
+int
 init_userp(cam_v4l2_t * cam, unsigned int buffer_size)
 {
 	struct v4l2_requestbuffers req;
@@ -315,10 +509,11 @@ init_userp(cam_v4l2_t * cam, unsigned int buffer_size)
 			return ERR_NOPE;
 		}
 	}
+    return ERR_OK;
 }
 
 
-void
+int
 init_read(cam_v4l2_t * cam, unsigned int buffer_size)
 {
 	cam->buffers = calloc(1, sizeof(*(cam->buffers)));
@@ -334,6 +529,38 @@ init_read(cam_v4l2_t * cam, unsigned int buffer_size)
 	if (!cam->buffers[0].start) {
 		fprintf(stderr, "Out of memory\\n");
 		return ERR_NOPE;
+	}
+    return ERR_OK;
+}
+
+
+void
+convert_v4l_mode_to_cyan(v4lmode_t * v4lmode, hw_mode_t * cyanmode)
+{
+
+	struct v4l2_fmtdesc fmtdesc;
+	struct v4l2_frmsizeenum frmsizeenum;
+	struct v4l2_frmivalenum frmivalenum;
+
+	cyanmode->cols = v4lmode->v4l_width;
+	cyanmode->rows = v4lmode->v4l_height;
+	cyanmode->fps =
+	    ((float) v4lmode->v4l_fps_denominator) /
+	    ((float) v4lmode->v4l_fps_numerator);
+	cyanmode->enabled = 0;
+	snprintf(cyanmode->description, 100, "%s %dx%d @ %f FPS", v4lmode->description, cyanmode->cols, cyanmode->rows, cyanmode->fps);	// FIXME
+
+	switch (v4lmode->v4l_format) {	// Add new formats here
+	case V4L2_PIX_FMT_YUYV:
+		cyanmode->pixel_format = YUV422_8_UYVY;
+		cyanmode->image_format = FMT_PLANE;
+		cyanmode->enabled = 1;
+		break;
+	default:
+		cyanmode->pixel_format = Unsupported;
+		cyanmode->image_format = FMT_UNSUPPORTED;
+		cyanmode->enabled = 0;
+		break;
 	}
 }
 
