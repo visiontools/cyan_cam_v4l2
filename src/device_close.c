@@ -4,11 +4,13 @@
 #include <unistd.h>
 #include "cam_v4l2.h"
 
-void device_close(cam_v4l2_t *cam)
+void
+device_close(cam_v4l2_t * cam)
 {
-    if (-1 == close(cam->fd)) {
-        fprintf(stderr, "close error %d, %s\\n", errno, strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-    cam->fd = -1;
+	if (-1 == close(cam->fd)) {
+		fprintf(stderr, "close error %d, %s\\n", errno,
+		    strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	cam->fd = -1;
 }
