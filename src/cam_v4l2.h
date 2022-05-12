@@ -47,13 +47,4 @@ typedef struct {
 
 int xioctl(int fh, int request, void *arg);
 
-void device_init(cam_v4l2_t * cam);
-void device_uninit(cam_v4l2_t * cam);
-void device_open(cam_v4l2_t * cam);
-void device_close(cam_v4l2_t * cam);
-void device_start(cam_v4l2_t * cam);
-void device_stop(cam_v4l2_t * cam);
-void device_get_frame(cam_v4l2_t * cam);
-void device_get_available_modes(cam_v4l2_t * cam);
-
 #endif

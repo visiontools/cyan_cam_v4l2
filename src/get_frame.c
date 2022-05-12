@@ -27,7 +27,6 @@ get_frame(void *cam_handle, image_t * img)
 	FD_ZERO(&fds);
 	FD_SET(camera->fd, &fds);
 
-	/* Timeout. */
 	tv.tv_sec = 2;
 	tv.tv_usec = 0;
 
@@ -77,7 +76,6 @@ get_frame(void *cam_handle, image_t * img)
 
 			case EIO:
 				/* Could ignore EIO, see spec. */
-
 				/* fall through */
 
 			default:
