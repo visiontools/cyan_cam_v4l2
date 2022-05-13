@@ -9,6 +9,7 @@
 #include <linux/videodev2.h>
 #include <cyan/hwcam/pixelformats.h>
 #include <cyan/hwcam/imageformats.h>
+#include <cyan/hwcam/buffer_ops.h>
 
 #include "cam_v4l2.h"
 
@@ -550,11 +551,12 @@ convert_v4l_mode_to_cyan(v4lmode_t * v4lmode, hw_mode_t * cyanmode)
 	cyanmode->enabled = 0;
 	snprintf(cyanmode->description, 100, "%s %dx%d @ %f FPS", v4lmode->description, cyanmode->cols, cyanmode->rows, cyanmode->fps);	// FIXME
 
-	switch (v4lmode->v4l_format) {	// Add new formats here
+	switch (v4lmode->v4l_format) {	// TODO Add new formats here
 	case V4L2_PIX_FMT_YUYV:
-		cyanmode->pixel_format = YUV422_8_UYVY;
+		cyanmode->pixel_format = YUV422_8;
 		cyanmode->image_format = FMT_PLANE;
 		cyanmode->enabled = 1;
+        v4lmode->buff_decode = buff_decode_YUV422_8 ;
 		break;
 	default:
 		cyanmode->pixel_format = Unsupported;

@@ -40,7 +40,7 @@ set_mode(void *cam_handle, int mode)
 	}
 	// Set pixel_decode function
 
-	// TODO
+	camera->buff_decode = camera->v4l_modes[mode].buff_decode ;
 
 	// Set current_mode
 

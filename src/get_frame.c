@@ -7,13 +7,6 @@
 
 #include "cam_v4l2.h"
 
-static void
-process_image(const void *p, int size)
-{
-	fflush(stderr);
-	fprintf(stderr, ".");
-	fflush(stdout);
-}
 
 int
 get_frame(void *cam_handle, image_t * img)
@@ -63,7 +56,7 @@ get_frame(void *cam_handle, image_t * img)
                 return ERR_NOPE;
 			}
 		}
-		process_image(camera->buffers[0].start, camera->buffers[0].length);
+		camera->buff_decode(camera->buffers[0].start, camera->buffers[0].length, img->X, img->Y, img->Z);
 		break;
 	case IO_METHOD_MMAP:
 		memset(&buf, 0, sizeof(buf));
@@ -84,7 +77,7 @@ get_frame(void *cam_handle, image_t * img)
 			}
 		}
 		assert(buf.index < camera->n_buffers);
-		process_image(camera->buffers[buf.index].start, buf.bytesused);
+		camera->buff_decode(camera->buffers[buf.index].start, buf.bytesused, img->X, img->Y, img->Z);
 		if (-1 == xioctl(camera->fd, VIDIOC_QBUF, &buf)) {
 			fprintf(stderr, "VIDIOC_QBUF\n");
             return ERR_NOPE;
@@ -112,7 +105,7 @@ get_frame(void *cam_handle, image_t * img)
 			    && buf.length == camera->buffers[i].length)
 				break;
 		assert(i < camera->n_buffers);
-		process_image((void *) buf.m.userptr, buf.bytesused);
+		camera->buff_decode((void *) buf.m.userptr, buf.bytesused, img->X, img->Y, img->Z);
 		if (-1 == xioctl(camera->fd, VIDIOC_QBUF, &buf)) {
 			fprintf(stderr, "VIDIOC_QBUF\n");
             return ERR_NOPE;

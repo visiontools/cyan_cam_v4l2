@@ -24,9 +24,12 @@ typedef struct {
 	int v4l_fps_numerator;
 	int v4l_fps_denominator;
 	char description[100];
+    int (*buff_decode)(unsigned char*, size_t, double*, double*, double*) ;
 } v4lmode_t;
 
 typedef struct {
+
+    int (*buff_decode)(unsigned char*, size_t, double*, double*, double*) ;
 
 	// v4l2 stuff
 
