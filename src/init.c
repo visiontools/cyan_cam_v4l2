@@ -5,7 +5,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/mman.h>
 #include <linux/videodev2.h>
 #include <cyan/hwcam/pixelformats.h>
 #include <cyan/hwcam/imageformats.h>
@@ -14,10 +13,8 @@
 #include "cam_v4l2.h"
 
 
+#define VERBOSE
 
-int init_read(cam_v4l2_t * cam, unsigned int buffer_size);
-int init_userp(cam_v4l2_t * cam, unsigned int buffer_size);
-int init_mmap(cam_v4l2_t * cam);
 void convert_v4l_mode_to_cyan(v4lmode_t *, hw_mode_t *);
 
 int
@@ -45,7 +42,7 @@ init(void **cam_handle, va_list args)
 
 	camera->dev_name = NULL;
 	camera->fd = -1;
-	camera->io = IO_METHOD_MMAP;
+	camera->io = IO_METHOD_MMAP ;       // FIXME
 	camera->buffers = NULL;
 	camera->n_buffers = 0;
 	camera->v4l_modes = NULL;
@@ -82,9 +79,6 @@ init(void **cam_handle, va_list args)
     //--- Device Initialization
 
 	struct v4l2_capability cap;
-	struct v4l2_cropcap cropcap;
-	struct v4l2_crop crop;
-	struct v4l2_format fmt;
 
 	unsigned int min;
 
@@ -106,6 +100,19 @@ init(void **cam_handle, va_list args)
 		return ERR_NOPE;
 	}
 
+
+#ifdef VERBOSE
+    if ( cap.capabilities & V4L2_CAP_READWRITE ) 
+        printf("[cam_v4l2] READWRITE IO Method is supported\n") ;
+    else
+        printf("[cam_v4l2] READWRITE IO Method is not supported\n") ;
+    
+    if ( cap.capabilities & V4L2_CAP_STREAMING ) 
+        printf("[cam_v4l2] STREAMING IO Method is supported\n") ;
+    else
+        printf("[cam_v4l2] STREAMING IO Method is not supported\n") ;
+#endif
+
 	switch (camera->io) {
 	case IO_METHOD_READ:
 		if (!(cap.capabilities & V4L2_CAP_READWRITE)) {
@@ -125,61 +132,56 @@ init(void **cam_handle, va_list args)
 		break;
 	}
 
-	/* Select video input, video standard and tune here. */
+	// Reset cropping if supported 
+
+	struct v4l2_cropcap cropcap;
+	struct v4l2_crop crop;
 
 	memset(&cropcap, 0, sizeof(cropcap));
-
 	cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
 	if (0 == xioctl(camera->fd, VIDIOC_CROPCAP, &cropcap)) {
 		crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		crop.c = cropcap.defrect;	/* reset to default */
+		crop.c = cropcap.defrect ;
 
 		if (-1 == xioctl(camera->fd, VIDIOC_S_CROP, &crop)) {
 			switch (errno) {
 			case EINVAL:
-				/* Cropping not supported. */
+				// Cropping is not supported. No need to worry.
 				break;
 			default:
-				/* Errors ignored. */
+				// Error occured. Let's ignore this.
 				break;
 			}
 		}
 	} else {
-		/* Errors ignored. */
+		// Could not retrieve cropping capabilities.
+        // This is weird, but well ... Let's try to go on.
 	}
 
-	memset(&fmt, 0, sizeof(fmt));
 
+	// Retrieve original settings as set by v4l2-ctl for example 
+
+	struct v4l2_format fmt;
+
+	memset(&fmt, 0, sizeof(fmt));
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	/* Preserve original settings as set by v4l2-ctl for example */
-	if (-1 == xioctl(camera->fd, VIDIOC_G_FMT, &fmt)) {
+	
+    if (-1 == xioctl(camera->fd, VIDIOC_G_FMT, &fmt)) {
 		fprintf(stderr, "VIDIOC_G_FMT error %d, %s\\n", errno,
 		    strerror(errno));
 		return ERR_NOPE;
 	}
 
 	/* Buggy driver paranoia. */
+
 	min = fmt.fmt.pix.width * 2;
 	if (fmt.fmt.pix.bytesperline < min)
 		fmt.fmt.pix.bytesperline = min;
-	min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
+	
+    min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
 	if (fmt.fmt.pix.sizeimage < min)
 		fmt.fmt.pix.sizeimage = min;
-
-	switch (camera->io) {
-	case IO_METHOD_READ:
-		init_read(camera, fmt.fmt.pix.sizeimage);
-		break;
-
-	case IO_METHOD_MMAP:
-		init_mmap(camera);
-		break;
-
-	case IO_METHOD_USERPTR:
-		init_userp(camera, fmt.fmt.pix.sizeimage);
-		break;
-	}
 
     //--- List availables modes
     
@@ -397,142 +399,12 @@ init(void **cam_handle, va_list args)
 #ifdef VERBOSE
 	printf("Current Mode is %d \n", camera->current_mode);
 #endif
+    
+
 
 	return ERR_OK;
 }
 
-
-
-int
-init_mmap(cam_v4l2_t * cam)
-{
-	struct v4l2_requestbuffers req;
-
-	memset(&req, 0, sizeof(req));
-
-	req.count = 4;
-	req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	req.memory = V4L2_MEMORY_MMAP;
-
-	if (-1 == xioctl(cam->fd, VIDIOC_REQBUFS, &req)) {
-		if (EINVAL == errno) {
-			fprintf(stderr, "%s does not support "
-			    "memory mappingn", cam->dev_name);
-			return ERR_NOPE;
-		} else {
-			fprintf(stderr, "VIDIOC_REQBUFS error %d, %s\\n",
-			    errno, strerror(errno));
-			return ERR_NOPE;
-		}
-	}
-
-	if (req.count < 2) {
-		fprintf(stderr, "Insufficient buffer memory on %s\\n",
-		    cam->dev_name);
-		return ERR_NOPE;
-	}
-
-	cam->buffers = calloc(req.count, sizeof(*(cam->buffers)));
-
-	if (!cam->buffers) {
-		fprintf(stderr, "Out of memory\\n");
-		return ERR_NOPE;
-	}
-
-	for (cam->n_buffers = 0; cam->n_buffers < req.count;
-	    ++(cam->n_buffers)) {
-		struct v4l2_buffer buf;
-
-		memset(&buf, 0, sizeof(buf));
-
-		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.memory = V4L2_MEMORY_MMAP;
-		buf.index = cam->n_buffers;
-
-		if (-1 == xioctl(cam->fd, VIDIOC_QUERYBUF, &buf)) {
-			fprintf(stderr, "VIDIOC_QUERYBUF error %d, %s\\n",
-			    errno, strerror(errno));
-			return ERR_NOPE;
-		}
-
-		cam->buffers[cam->n_buffers].length = buf.length;
-		cam->buffers[cam->n_buffers].start =
-		    mmap(NULL /* start anywhere */ ,
-		    buf.length, PROT_READ | PROT_WRITE /* required */ ,
-		    MAP_SHARED /* recommended */ ,
-		    cam->fd, buf.m.offset);
-
-		if (MAP_FAILED == cam->buffers[cam->n_buffers].start) {
-			fprintf(stderr, "mmap error %d, %s\\n", errno,
-			    strerror(errno));
-			return ERR_NOPE;
-		}
-	}
-    return ERR_OK ;
-}
-
-int
-init_userp(cam_v4l2_t * cam, unsigned int buffer_size)
-{
-	struct v4l2_requestbuffers req;
-
-	memset(&req, 0, sizeof(req));
-
-	req.count = 4;
-	req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	req.memory = V4L2_MEMORY_USERPTR;
-
-	if (-1 == xioctl(cam->fd, VIDIOC_REQBUFS, &req)) {
-		if (EINVAL == errno) {
-			fprintf(stderr, "%s does not support "
-			    "user pointer i/on", cam->dev_name);
-			return ERR_NOPE;
-		} else {
-			fprintf(stderr, "VIDIOC_REQBUFS error %d, %s\\n",
-			    errno, strerror(errno));
-			return ERR_NOPE;
-		}
-	}
-
-	cam->buffers = calloc(4, sizeof(*(cam->buffers)));
-
-	if (!cam->buffers) {
-		fprintf(stderr, "Out of memory\\n");
-		return ERR_NOPE;
-	}
-
-	for (cam->n_buffers = 0; cam->n_buffers < 4; ++(cam->n_buffers)) {
-		cam->buffers[cam->n_buffers].length = buffer_size;
-		cam->buffers[cam->n_buffers].start = malloc(buffer_size);
-
-		if (!cam->buffers[cam->n_buffers].start) {
-			fprintf(stderr, "Out of memory\\n");
-			return ERR_NOPE;
-		}
-	}
-    return ERR_OK;
-}
-
-
-int
-init_read(cam_v4l2_t * cam, unsigned int buffer_size)
-{
-	cam->buffers = calloc(1, sizeof(*(cam->buffers)));
-
-	if (!cam->buffers) {
-		fprintf(stderr, "Out of memory\\n");
-		return ERR_NOPE;
-	}
-
-	cam->buffers[0].length = buffer_size;
-	cam->buffers[0].start = malloc(buffer_size);
-
-	if (!cam->buffers[0].start) {
-		fprintf(stderr, "Out of memory\\n");
-		return ERR_NOPE;
-	}
-    return ERR_OK;
-}
 
 
 void

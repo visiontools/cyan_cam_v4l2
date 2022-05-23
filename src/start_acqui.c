@@ -5,6 +5,8 @@
 
 #include "cam_v4l2.h"
 
+#define VERBOSE
+
 int
 start_acqui(void *cam_handle)
 {
@@ -63,6 +65,25 @@ start_acqui(void *cam_handle)
 		}
 		break;
 	}
+
+#ifdef VERBOSE
+    printf("[cam_v4l2] start_acqui:\n") ;
+    printf("\tcamera->io : ") ;
+	switch (camera->io) {
+        case IO_METHOD_READ:
+            printf("IO_METHOD_READ") ;
+            break ;
+        case IO_METHOD_USERPTR:
+            printf("IO_METHOD_USERPTR") ;
+            break ;
+        case IO_METHOD_MMAP:
+            printf("IO_METHOD_MMAP" ) ;
+            break ;
+        default:
+            printf("UNKNOWN" ) ;
+    }
+    printf("\n");
+#endif
 
 	return ERR_OK;
 }

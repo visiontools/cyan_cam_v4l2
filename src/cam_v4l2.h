@@ -4,7 +4,6 @@
 #include <cyan/hwcam/plugin.h>
 #include <cyan/common/error.h>
 
-#define VERBOSE
 
 enum io_method {
 	IO_METHOD_READ,
@@ -35,11 +34,12 @@ typedef struct {
 
 	char *dev_name;
 	int fd;
-	enum io_method io;
-	struct buffer *buffers;
+	enum io_method io; 
+
+    struct buffer *buffers;
 	unsigned int n_buffers;
 
-	// V4l modes
+	// Camera Modes
 
 	hw_mode_t *modes;
 	v4lmode_t *v4l_modes;
