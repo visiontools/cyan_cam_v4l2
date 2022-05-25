@@ -31,7 +31,7 @@ int main (int argc, char** argv) {
 
     for (i=0; i<NB_FRAMES; i++) {
         hwcam_dequeue( camera, &image ) ;
-        sprintf(filename, "%d.cyan", i ) ;
+        sprintf(filename, "%04d.cyan", i ) ;
         image_save( image, filename ) ;
         hwcam_enqueue( camera, image ) ;
     }
